@@ -24,7 +24,7 @@ let totalDamageDealt = 0;
 const WAVE_TIME_LIMIT = 120;
 let timeRemaining = WAVE_TIME_LIMIT;
 let timerInterval: number | null = null;
-let isTimeOut = false; // แฟล็กเช็กว่าเวลาหมดหรือยัง
+let isTimeOut = false;
 
 function startTimer(): void {
   stopTimer();
@@ -43,7 +43,7 @@ function startTimer(): void {
 
     if (timeRemaining <= 0) {
       stopTimer();
-      isTimeOut = true; // เซ็ตว่าเวลาหมด
+      isTimeOut = true;
       renderBattleScreen();
     }
   }, 1000);
@@ -120,7 +120,7 @@ function renderStartScreen(): void {
 
   app.innerHTML = `
     <div class="start-screen">
-      <h1>⚔️ Arena of Classes</h1>
+      <h1>⚔️️ Arena of Classes</h1>
       <p class="subtitle">ผจญภัยฝ่า 3 เวฟ พร้อมทีม Kaelen, Nerine และ Sylas (ชี้ที่การ์ดเพื่อดูข้อมูล)</p>
       <div class="team-preview">
         <div class="preview-card has-tooltip">
@@ -148,6 +148,7 @@ function renderStartScreen(): void {
 
   app.querySelector<HTMLButtonElement>("#start-btn")?.addEventListener("click", () => {
     transitionTo(() => {
+      isTimeOut = false;
       battle = new Battle(buildTeam());
       startTimer();
       renderBattleScreen();
@@ -334,7 +335,6 @@ function renderEndOverlay(kind: "victory" | "defeat" | "timeout"): string {
 function wireBattleEvents(): void {
   if (!battle) return;
 
-  // โค้ด Toggle เปิด/ปิด Battle Log
   app.querySelector<HTMLButtonElement>("#toggle-log-btn")?.addEventListener("click", () => {
     const logBox = document.getElementById("log-box");
     logBox?.classList.toggle("show");
@@ -415,6 +415,13 @@ function wireBattleEvents(): void {
   });
 
   app.querySelector<HTMLButtonElement>("#restart-btn")?.addEventListener("click", () => {
+    isTimeOut = false;
+    selectedActorName = null;
+    pendingAction = null;
+    totalTurns = 0;
+    totalDamageDealt = 0;
+    stopTimer();
+    
     transitionTo(() => {
       battle = new Battle(buildTeam());
       startTimer();
@@ -423,6 +430,8 @@ function wireBattleEvents(): void {
   });
 
   app.querySelector<HTMLButtonElement>("#home-btn")?.addEventListener("click", () => {
+    isTimeOut = false;
+    stopTimer();
     transitionTo(renderStartScreen);
   });
 
@@ -456,7 +465,6 @@ function renderBattleScreen(): void {
         </div>
       </div>
 
-      <!-- ล็อกบ็อกซ์เปลี่ยนเป็นแบบ Dropdown / โผล่มาเมื่อกดปุ่ม -->
       <div class="log-box-floating" id="log-box">
         <h4>บันทึกการต่อสู้</h4>
         ${battle.log.length > 0 ? battle.log.map((line) => `<p>${line}</p>`).join("") : "<p>ยังไม่มีการโจมตี...</p>"}
