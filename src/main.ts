@@ -20,11 +20,16 @@ let pendingAction: { kind: "attack" | "ultimate" | Skill; label: string } | null
 
 let totalTurns = 0;
 let totalDamageDealt = 0;
+let playerName = ""; // ไม่มีคำว่าผู้กล้าตั้งต้น
 
 const WAVE_TIME_LIMIT = 120;
 let timeRemaining = WAVE_TIME_LIMIT;
 let timerInterval: number | null = null;
 let isTimeOut = false;
+
+// ข้อความเนื้อเรื่อง
+const STORY_TITLE = "ตำนานแห่งสามสมดุล";
+const STORY_CONTENT = `กาลครั้งหนึ่งนานมาแล้ว ดินแดนแห่งนี้ขับเคลื่อนด้วย 3 พลังธาตุหลัก — ไฟ น้ำ และใบไม้ ที่คอยค้ำจุนความสมดุลของโลก\n\nทว่า เมื่อเหล่ากองทัพอสูรโบราณเริ่มตื่นขึ้นและกลืนกินความสงบสุข สามผู้กล้าแห่งสามวิถี Kaelen, Nerine และ Sylas จึงต้องร่วมมือกันฝ่าฟันอุปสรรคทั้ง 3 เวฟ เพื่อปราบจอมอสูรและคืนความสมดุลให้โลกอีกครั้ง!`;
 
 function startTimer(): void {
   stopTimer();
@@ -120,8 +125,15 @@ function renderStartScreen(): void {
 
   app.innerHTML = `
     <div class="start-screen">
-      <h1>⚔️️ Arena of Classes</h1>
+      <h1>⚔ Arena of Classes</h1>
       <p class="subtitle">ผจญภัยฝ่า 3 เวฟ พร้อมทีม Kaelen, Nerine และ Sylas (ชี้ที่การ์ดเพื่อดูข้อมูล)</p>
+      
+      <!-- กล่องกรอกชื่อแบบมินิมอล ไม่มีคำว่าผู้กล้ากวนใจ -->
+      <div style="margin: 1.2rem 0; display: flex; align-items: center; justify-content: center;">
+        <input id="player-name-input" type="text" placeholder="ระบุชื่อผู้เล่น..." value="${playerName}" 
+               style="padding: 7px 14px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: #fff; outline: none; font-size: 0.95rem; text-align: center; width: 220px;" />
+      </div>
+
       <div class="team-preview">
         <div class="preview-card has-tooltip">
           ${portraitHtml(previewTeam[0])}
@@ -143,16 +155,40 @@ function renderStartScreen(): void {
         <button id="start-btn">เริ่มผจญภัย</button>
         <button id="story-btn" class="story-btn">เนื้อเรื่อง</button>
       </div>
+
+      <!-- ป๊อปอัปเนื้อเรื่อง -->
+      <div id="story-modal" class="result-overlay" style="display: none;">
+        <div class="result-box" style="max-width: 500px; text-align: left;">
+          <h2 style="text-align: center; color: var(--gold); margin-top: 0;">${STORY_TITLE}</h2>
+          <p style="white-space: pre-line; line-height: 1.6; color: var(--text);">${STORY_CONTENT}</p>
+          <div style="text-align: center; margin-top: 1.5rem;">
+            <button id="close-story-btn" class="home-btn-special">เข้าใจแล้ว</button>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 
   app.querySelector<HTMLButtonElement>("#start-btn")?.addEventListener("click", () => {
+    const inputEl = app.querySelector<HTMLInputElement>("#player-name-input");
+    if (inputEl && inputEl.value.trim() !== "") {
+      playerName = inputEl.value.trim();
+    }
     transitionTo(() => {
       isTimeOut = false;
       battle = new Battle(buildTeam());
       startTimer();
       renderBattleScreen();
     });
+  });
+
+  const storyModal = app.querySelector<HTMLDivElement>("#story-modal")!;
+  app.querySelector<HTMLButtonElement>("#story-btn")?.addEventListener("click", () => {
+    storyModal.style.display = "flex";
+  });
+
+  app.querySelector<HTMLButtonElement>("#close-story-btn")?.addEventListener("click", () => {
+    storyModal.style.display = "none";
   });
 }
 
@@ -458,7 +494,7 @@ function renderBattleScreen(): void {
     <div class="battle-screen">
       <div class="battle-header">
         <button id="back-btn" class="back-btn" title="ออกไปหน้าแรก">&lt;</button>
-        <div class="wave-label">Wave ${battle.waveNumber} / ${battle.totalWaves}</div>
+        <div class="wave-label">${playerName ? `${playerName} | ` : ""}Wave ${battle.waveNumber} / ${battle.totalWaves}</div>
         <div class="header-right-actions">
           <button id="toggle-log-btn" class="log-toggle-btn">ประวัติการต่อสู้</button>
           <div id="wave-timer" class="wave-timer">${timeRemaining}s</div>
