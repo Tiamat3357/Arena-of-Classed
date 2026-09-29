@@ -46,27 +46,7 @@ index.html
 | **Inheritance** | `Knight/Mage/Ranger/Monster extends Character`, `DamageSkill/HealSkill/BuffSkill extends Skill`, `AttackBuffReward/HealReward/CooldownResetReward extends Reward` | 3 คู่ inheritance แยกกัน |
 | **Polymorphism** | `attack()`/`ultimate()` ของแต่ละตัวละคร, `use()` ของแต่ละสกิล, `apply()` ของแต่ละรางวัล | จุดที่ควรโชว์ตอน present: `Battle.ts` เรียก `enemy.attack()` โดยไม่รู้เลยว่ากำลังคุยกับ Goblin, Orc หรือมังกร |
 
-## กติกาเกม
 
-- เลือกตัวละคร 1 ตัวในทีม (คลิกการ์ด) → เลือกท่า: โจมตี / สกิล 1-3 (มีคูลดาวน์) / อัลติเมต (ต้องเกจเต็ม)
-- เป้าหมายเลือกอัตโนมัติ: โจมตี/สกิล/อัลติเมตโจมตี → เล็งศัตรู HP ต่ำสุด, สกิลฮีล → เล็งพวกเดียวกัน HP ต่ำสุด, สกิลบัฟ → ใส่ตัวเอง (ไม่มี UI เลือกเป้าหมายเอง เพื่อประหยัดเวลาทำ)
-- ธาตุ ไฟ > ใบไม้ > น้ำ > ไฟ (ดาเมจ x1.5 ถ้าได้เปรียบ, x0.75 ถ้าเสียเปรียบ)
-- ฝ่า 3 เวฟ (เวฟ 3 = บอส) ระหว่างเวฟเลือกของรางวัล 1 ใน 3
-- แพ้ถ้าทั้งทีมตายก่อนจบเวฟ 3
 
-## แบ่งงาน 3 คน (แนะนำ)
 
-- **คนที่ 1 — Combat classes**: `Character.ts`, `Knight.ts`, `Mage.ts`, `Ranger.ts`, `Monster.ts`
-- **คนที่ 2 — Skills, Rewards, Battle**: `Skill.ts` + ลูกทั้ง 3, `Reward.ts`, `Battle.ts`, `waves.ts`
-- **คนที่ 3 — GUI & Polish**: `main.ts`, `styles.css` + เตรียมสไลด์/ซ้อม demo
 
-## ไอเดียต่อยอด (ถ้ามีเวลาเหลือ)
-
-- ใส่ภาพตัวละครจริงแทนอิโมจิ (เพิ่ม field `avatarUrl` ใน `Character` แล้ว fallback เป็น `icon` ถ้าไม่มีรูป)
-- ทำ `Vine Snare` ของ Sylas ให้ลดพลังโจมตีศัตรูจริงๆ แทนที่จะเป็นแค่ดาเมจ (ใช้กลไกเดียวกับ buff แต่ทำเป็น debuff ฝั่งศัตรู)
-- ให้ผู้เล่นเลือกเป้าหมายเองแทนการเล็งอัตโนมัติ
-
-## ก่อนส่งงานจริง
-
-- [ ] ตั้ง GitHub repo เป็น public แล้ว commit แยกตามคนจริงๆ (เกณฑ์ตรวจ commit history)
-- [ ] ทำสไลด์ชี้ตำแหน่งโค้ดตามตารางด้านบน พร้อม demo สด
