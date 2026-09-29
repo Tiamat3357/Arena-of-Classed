@@ -37,7 +37,7 @@ function startTimer(): void {
     timeRemaining--;
     const timerEl = document.querySelector<HTMLElement>("#wave-timer");
     if (timerEl) {
-      timerEl.innerText = `⏱️ ${timeRemaining}s`;
+      timerEl.innerText = `${timeRemaining}s`;
       if (timeRemaining <= 15) timerEl.style.color = "#ff4d4d";
     }
 
@@ -77,8 +77,6 @@ function portraitHtml(c: Character): string {
     ? `<img src="${c.avatarUrl}" alt="${c.name}" class="char-portrait" />`
     : `<span class="char-icon">${c.icon}</span>`;
 }
-
-const STORY_TEXT = `กาลครั้งหนึ่ง สามธาตุแห่งโลก — ไฟ น้ำ และใบไม้ — เคยอยู่ร่วมกันอย่างสมดุล...`;
 
 function transitionTo(renderFn: () => void): void {
   const current = app.firstElementChild as HTMLElement | null;
@@ -143,7 +141,7 @@ function renderStartScreen(): void {
       </div>
       <div class="start-actions">
         <button id="start-btn">เริ่มผจญภัย</button>
-        <button id="story-btn" class="story-btn">📖 เนื้อเรื่อง</button>
+        <button id="story-btn" class="story-btn">เนื้อเรื่อง</button>
       </div>
     </div>
   `;
@@ -180,10 +178,10 @@ function enemyCard(m: Monster): string {
     <div class="combat-card enemy-card ${m.isAlive ? "" : "dead"} ${isTargetable ? "targetable-enemy" : ""}" 
          data-target-type="enemy" data-enemy-name="${m.name}">
       <div class="portrait-wrap">${portraitHtml(m)}</div>
-      <h4>${m.name}${m.isBoss ? " 👑" : ""}</h4>
+      <h4>${m.name}${m.isBoss ? " (Boss)" : ""}</h4>
       <p class="element-tag">${elementIcon(m.element)}</p>
       ${hpBar(m)}
-      ${isTargetable ? '<div class="target-indicator">🎯 คลิกเพื่อโจมตี</div>' : ""}
+      ${isTargetable ? '<div class="target-indicator">คลิกเพื่อโจมตี</div>' : ""}
     </div>
   `;
 }
@@ -206,7 +204,7 @@ function renderActionBar(actor: Character): string {
       ${skillButtons}
       <button class="action-btn ultimate-btn ${pendingAction?.label === "ultimate" ? "active-action" : ""}" 
               data-action="ultimate" ${actor.ultimateReady ? "" : "disabled"}>
-        ⭐ อัลติเมต
+        อัลติเมต
       </button>
     </div>
   `;
@@ -226,7 +224,7 @@ function partyCard(c: Character): string {
       ${hpBar(c)}
       ${gaugeBar(c)}
       ${isSelected && c.isAlive ? renderActionBar(c) : ""}
-      ${isTargetableAlly ? '<div class="target-indicator heal">💚 คลิกเพื่อฟื้นฟู</div>' : ""}
+      ${isTargetableAlly ? '<div class="target-indicator heal">คลิกเพื่อฟื้นฟู</div>' : ""}
     </div>
   `;
 }
@@ -272,7 +270,7 @@ function renderRewardScreen(): void {
 
   app.innerHTML = `
     <div class="reward-screen">
-      <h2>🎁 เลือกของรางวัลก่อนขึ้น Wave ${battle.waveNumber + 1}</h2>
+      <h2>เลือกของรางวัลก่อนขึ้น Wave ${battle.waveNumber + 1}</h2>
       <div class="reward-grid">
         ${battle.rewardOptions
           .map(
@@ -302,16 +300,13 @@ function renderRewardScreen(): void {
 function renderEndOverlay(kind: "victory" | "defeat" | "timeout"): string {
   stopTimer();
   
-  let icon = "💀";
   let title = "DEFEAT พ่ายแพ้แก่ฝูงอสูร...";
   let desc = "จัดทัพและวางแผนแก้ทางธาตุใหม่ แล้วลองอีกครั้ง!";
   
   if (kind === "victory") {
-    icon = "🏆";
     title = "VICTORY! พิชิตทั้ง 3 เวฟสำเร็จ";
     desc = "ความสมดุลแห่ง 3 ธาตุได้รับการปกป้องแล้ว!";
   } else if (kind === "timeout") {
-    icon = "⏰";
     title = "GAME OVER! เวลาหมด";
     desc = "กองทัพอสูรบุกทะลวงสำเร็จเพราะคุณใช้เวลามากเกินไป!";
   }
@@ -319,7 +314,6 @@ function renderEndOverlay(kind: "victory" | "defeat" | "timeout"): string {
   return `
     <div class="result-overlay ${kind === 'victory' ? 'victory-modal' : 'defeat-modal'}">
       <div class="result-box">
-        <div class="trophy-icon">${icon}</div>
         <h2>${title}</h2>
         <p class="victory-desc">${desc}</p>
         ${kind === "victory" ? `
@@ -329,8 +323,8 @@ function renderEndOverlay(kind: "victory" | "defeat" | "timeout"): string {
           </div>
         ` : ""}
         <div class="modal-actions">
-          <button id="restart-btn" class="restart-btn-special">🔄 เล่นใหม่อีกครั้ง</button>
-          <button id="home-btn" class="home-btn-special">🏠 กลับหน้าหลัก</button>
+          <button id="restart-btn" class="restart-btn-special">เล่นใหม่อีกครั้ง</button>
+          <button id="home-btn" class="home-btn-special">กลับหน้าหลัก</button>
         </div>
       </div>
     </div>
@@ -454,11 +448,11 @@ function renderBattleScreen(): void {
   app.innerHTML = `
     <div class="battle-screen">
       <div class="battle-header">
-        <button id="back-btn" class="back-btn" title="ออกไปหน้าแรก">↩</button>
+        <button id="back-btn" class="back-btn" title="ออกไปหน้าแรก">&lt;</button>
         <div class="wave-label">Wave ${battle.waveNumber} / ${battle.totalWaves}</div>
         <div class="header-right-actions">
-          <button id="toggle-log-btn" class="log-toggle-btn">📜 ประวัติการต่อสู้</button>
-          <div id="wave-timer" class="wave-timer">⏱️ ${timeRemaining}s</div>
+          <button id="toggle-log-btn" class="log-toggle-btn">ประวัติการต่อสู้</button>
+          <div id="wave-timer" class="wave-timer">${timeRemaining}s</div>
         </div>
       </div>
 
