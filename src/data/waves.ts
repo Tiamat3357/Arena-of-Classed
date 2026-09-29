@@ -67,4 +67,4 @@ export function createWave(waveNumber: number): Monster[] {
   }
 
 }
- }
+ 
