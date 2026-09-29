@@ -18,14 +18,13 @@ let battle: Battle | null = null;
 let selectedActorName: string | null = null;
 let pendingAction: { kind: "attack" | "ultimate" | Skill; label: string } | null = null;
 
-// สถิติสำหรับหน้าจบเกม
 let totalTurns = 0;
 let totalDamageDealt = 0;
 
-// ระบบเวลานับถอยหลังต่อ Wave (90 วินาที)
-const WAVE_TIME_LIMIT = 90;
+const WAVE_TIME_LIMIT = 120;
 let timeRemaining = WAVE_TIME_LIMIT;
 let timerInterval: number | null = null;
+let isTimeOut = false; // แฟล็กเช็กว่าเวลาหมดหรือยัง
 
 function startTimer(): void {
   stopTimer();
@@ -44,8 +43,7 @@ function startTimer(): void {
 
     if (timeRemaining <= 0) {
       stopTimer();
-      battle.addLog("⏰ เวลาหมดแล้ว! ฝูงอสูรบุกโจมตีจนทีมพ่ายแพ้...");
-      (battle as any).phase = "defeat";
+      isTimeOut = true; // เซ็ตว่าเวลาหมด
       renderBattleScreen();
     }
   }, 1000);
@@ -71,7 +69,7 @@ function buildTeam(): Character[] {
 }
 
 function elementIcon(e: string): string {
-  return e === "fire" ? "🔥" : e === "water" ? "💧" : "🍃";
+  return e === "fire" ? "🔥" : e === "water" ? "💧" : e === "grass" ? "🍃" : "✨";
 }
 
 function portraitHtml(c: Character): string {
@@ -80,15 +78,7 @@ function portraitHtml(c: Character): string {
     : `<span class="char-icon">${c.icon}</span>`;
 }
 
-const STORY_TEXT = `กาลครั้งหนึ่ง สามธาตุแห่งโลก — ไฟ น้ำ และใบไม้ — เคยอยู่ร่วมกันอย่างสมดุล
-จนวันที่รอยแยกมิติปริออก ปลดปล่อยฝูงอสูรออกมากลืนกินดินแดนทีละเวฟ
-
-เคเลน (Kaelen) อัศวินผู้กล้าแห่งเปลวสุริยะ ยืนหยัดเป็นแนวหน้าด้วยดาบและโล่
-เนรีน (Nerine) จอมเวทย์แห่งท้องทะเล ร่ายมนตร์บำบัดและโจมตีด้วยพลังแห่งคลื่น
-ไซลัส (Sylas) นักธนูแห่งป่าลึก แม่นยำทุกนัดดั่งสายลมพัดผ่านใบไม้
-
-ทั้งสามรวมพลังกันอีกครั้ง เพื่อฝ่าคลื่นอสูรทั้ง 3 ระลอก
-และปิดผนึกรอยแยกก่อนที่มันจะกลืนกินโลกทั้งใบ...`;
+const STORY_TEXT = `กาลครั้งหนึ่ง สามธาตุแห่งโลก — ไฟ น้ำ และใบไม้ — เคยอยู่ร่วมกันอย่างสมดุล...`;
 
 function transitionTo(renderFn: () => void): void {
   const current = app.firstElementChild as HTMLElement | null;
@@ -103,8 +93,6 @@ function transitionTo(renderFn: () => void): void {
     next?.classList.add("screen-fade-in");
   }, 220);
 }
-
-// ---------------- Start screen ----------------
 
 function renderCharacterTooltip(c: Character): string {
   const skillsList = c.skills.map((s) => `• ${s.name}`).join("<br/>");
@@ -128,6 +116,7 @@ function renderStartScreen(): void {
   pendingAction = null;
   totalTurns = 0;
   totalDamageDealt = 0;
+  isTimeOut = false;
 
   const previewTeam = buildTeam();
 
@@ -139,31 +128,22 @@ function renderStartScreen(): void {
         <div class="preview-card has-tooltip">
           ${portraitHtml(previewTeam[0])}
           <h3>Kaelen</h3>
-          <p>Knight · 🔥 Fire</p>
           ${renderCharacterTooltip(previewTeam[0])}
         </div>
         <div class="preview-card has-tooltip">
           ${portraitHtml(previewTeam[1])}
           <h3>Nerine</h3>
-          <p>Mage · 💧 Water</p>
           ${renderCharacterTooltip(previewTeam[1])}
         </div>
         <div class="preview-card has-tooltip">
           ${portraitHtml(previewTeam[2])}
           <h3>Sylas</h3>
-          <p>Ranger · 🍃 Grass</p>
           ${renderCharacterTooltip(previewTeam[2])}
         </div>
       </div>
       <div class="start-actions">
         <button id="start-btn">เริ่มผจญภัย</button>
         <button id="story-btn" class="story-btn">📖 เนื้อเรื่อง</button>
-      </div>
-      <div class="story-panel hidden" id="story-panel">
-        <div class="story-box">
-          <button id="story-close" class="story-close">✕</button>
-          <p class="story-text">${STORY_TEXT.replace(/\n/g, "<br/>")}</p>
-        </div>
       </div>
     </div>
   `;
@@ -175,17 +155,7 @@ function renderStartScreen(): void {
       renderBattleScreen();
     });
   });
-
-  const storyPanel = app.querySelector<HTMLDivElement>("#story-panel");
-  app.querySelector<HTMLButtonElement>("#story-btn")?.addEventListener("click", () => {
-    storyPanel?.classList.remove("hidden");
-  });
-  app.querySelector<HTMLButtonElement>("#story-close")?.addEventListener("click", () => {
-    storyPanel?.classList.add("hidden");
-  });
 }
-
-// ---------------- Shared bits ----------------
 
 function hpBar(c: Character): string {
   return `
@@ -261,8 +231,6 @@ function partyCard(c: Character): string {
   `;
 }
 
-// ---------------- Action resolution ----------------
-
 function performActionWithTarget(
   actor: Character,
   actionData: { kind: "attack" | "ultimate" | Skill; label: string },
@@ -298,8 +266,6 @@ function performActionWithTarget(
   renderBattleScreen();
 }
 
-// ---------------- Reward screen ----------------
-
 function renderRewardScreen(): void {
   if (!battle) return;
   stopTimer();
@@ -333,35 +299,39 @@ function renderRewardScreen(): void {
   });
 }
 
-// ---------------- Battle screen ----------------
-
-function renderEndOverlay(kind: "victory" | "defeat"): string {
+function renderEndOverlay(kind: "victory" | "defeat" | "timeout"): string {
   stopTimer();
+  
+  let icon = "💀";
+  let title = "DEFEAT พ่ายแพ้แก่ฝูงอสูร...";
+  let desc = "จัดทัพและวางแผนแก้ทางธาตุใหม่ แล้วลองอีกครั้ง!";
+  
   if (kind === "victory") {
-    return `
-      <div class="result-overlay victory-modal">
-        <div class="result-box">
-          <div class="trophy-icon">🏆</div>
-          <h2>VICTORY! พิชิตทั้ง 3 เวฟสำเร็จ</h2>
-          <p class="victory-desc">ความสมดุลแห่ง 3 ธาตุได้รับการปกป้องแล้ว!</p>
-          <div class="battle-stats">
-            <div class="stat-item"><span>จำนวนเทิร์นทั้งหมด:</span> <strong>${totalTurns} เทิร์น</strong></div>
-            <div class="stat-item"><span>ความเสียหายที่ทำได้:</span> <strong>${totalDamageDealt} DMG</strong></div>
-            <div class="stat-item"><span>ผู้กล้าที่รอดชีวิต:</span> <strong>${battle?.team.filter((c) => c.isAlive).length || 0}/3 คน</strong></div>
-          </div>
-          <button id="restart-btn" class="restart-btn-special">✨ ผจญภัยใหม่อีกครั้ง</button>
-        </div>
-      </div>
-    `;
+    icon = "🏆";
+    title = "VICTORY! พิชิตทั้ง 3 เวฟสำเร็จ";
+    desc = "ความสมดุลแห่ง 3 ธาตุได้รับการปกป้องแล้ว!";
+  } else if (kind === "timeout") {
+    icon = "⏰";
+    title = "GAME OVER! เวลาหมด";
+    desc = "กองทัพอสูรบุกทะลวงสำเร็จเพราะคุณใช้เวลามากเกินไป!";
   }
 
   return `
-    <div class="result-overlay defeat-modal">
+    <div class="result-overlay ${kind === 'victory' ? 'victory-modal' : 'defeat-modal'}">
       <div class="result-box">
-        <div class="trophy-icon">💀</div>
-        <h2>DEFEAT พ่ายแพ้แก่ฝูงอสูร...</h2>
-        <p>จัดทัพและวางแผนแก้ทางธาตุใหม่ แล้วลองอีกครั้ง!</p>
-        <button id="restart-btn" class="restart-btn-special">🔄 ลองใหม่</button>
+        <div class="trophy-icon">${icon}</div>
+        <h2>${title}</h2>
+        <p class="victory-desc">${desc}</p>
+        ${kind === "victory" ? `
+          <div class="battle-stats">
+            <div class="stat-item"><span>จำนวนเทิร์นทั้งหมด:</span> <strong>${totalTurns} เทิร์น</strong></div>
+            <div class="stat-item"><span>ความเสียหายที่ทำได้:</span> <strong>${totalDamageDealt} DMG</strong></div>
+          </div>
+        ` : ""}
+        <div class="modal-actions">
+          <button id="restart-btn" class="restart-btn-special">🔄 เล่นใหม่อีกครั้ง</button>
+          <button id="home-btn" class="home-btn-special">🏠 กลับหน้าหลัก</button>
+        </div>
       </div>
     </div>
   `;
@@ -370,7 +340,15 @@ function renderEndOverlay(kind: "victory" | "defeat"): string {
 function wireBattleEvents(): void {
   if (!battle) return;
 
-  // 1. เลือกตัวละครของเรา
+  // โค้ด Toggle เปิด/ปิด Battle Log
+  app.querySelector<HTMLButtonElement>("#toggle-log-btn")?.addEventListener("click", () => {
+    const logBox = document.getElementById("log-box");
+    logBox?.classList.toggle("show");
+    if (logBox?.classList.contains("show")) {
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+  });
+
   app.querySelectorAll<HTMLDivElement>(".party-card").forEach((card) => {
     card.addEventListener("click", (e) => {
       if ((e.target as HTMLElement).closest(".action-bar")) return;
@@ -379,7 +357,6 @@ function wireBattleEvents(): void {
       const allyName = card.dataset.actor!;
       const clickedAlly = battle.team.find((c) => c.name === allyName);
 
-      // ถ้าอยู่ในสถานะร่ายสกิลบัฟหรือฮีล -> คลิกที่พวกเดียวกันเพื่อเป็นเป้าหมาย
       if (pendingAction && pendingAction.kind instanceof HealSkill) {
         const actor = battle.team.find((c) => c.name === selectedActorName);
         if (actor && clickedAlly && clickedAlly.isAlive) {
@@ -388,11 +365,10 @@ function wireBattleEvents(): void {
         }
       }
 
-      // ถ้าคลิกปกติ เป็นการเลือกตัวที่จะออกคำสั่ง
       if (!clickedAlly || !clickedAlly.isAlive) return;
       if (selectedActorName !== allyName) {
         selectedActorName = allyName;
-        pendingAction = null; // รีเซ็ตการกระทำที่ค้างไว้
+        pendingAction = null;
       } else {
         selectedActorName = null;
         pendingAction = null;
@@ -401,7 +377,6 @@ function wireBattleEvents(): void {
     });
   });
 
-  // 2. คลิกปุ่ม Action / Skill
   app.querySelectorAll<HTMLButtonElement>(".action-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -412,24 +387,17 @@ function wireBattleEvents(): void {
       const action = btn.dataset.action;
       if (action === "attack") {
         pendingAction = { kind: "attack", label: "attack" };
-        battle.addLog(`👉 ${actor.name} เตรียมโจมตีปกติ: กรุณาคลิกเลือกศัตรูเป้าหมาย`);
       } else if (action === "ultimate") {
         pendingAction = { kind: "ultimate", label: "ultimate" };
-        battle.addLog(`⭐ ${actor.name} เตรียมใช้อัลติเมต: กรุณาคลิกเลือกศัตรูเป้าหมาย`);
       } else {
         const skillIndex = Number(btn.dataset.skillIndex);
         const skill = actor.skills[skillIndex];
         if (skill) {
           if (skill instanceof BuffSkill) {
-            // บัฟตัวเองทันที ไม่ต้องเลือกเป้าหมาย
             performActionWithTarget(actor, { kind: skill, label: skill.name }, actor);
             return;
-          } else if (skill instanceof HealSkill) {
-            pendingAction = { kind: skill, label: skill.name };
-            battle.addLog(`💚 ${actor.name} ร่าย ${skill.name}: กรุณาคลิกเลือกเพื่อนในทีมที่จะฟื้นฟู`);
           } else {
             pendingAction = { kind: skill, label: skill.name };
-            battle.addLog(`⚡ ${actor.name} ร่าย ${skill.name}: กรุณาคลิกเลือกศัตรูเป้าหมาย`);
           }
         }
       }
@@ -437,18 +405,10 @@ function wireBattleEvents(): void {
     });
   });
 
-  // 3. คลิกเลือกโจมตีมอนสเตอร์ (เป้าหมายศัตรู)
   app.querySelectorAll<HTMLDivElement>(".enemy-card").forEach((card) => {
     card.addEventListener("click", () => {
-      if (!battle || battle.phase !== "battle") return;
-      if (!pendingAction) return;
-
-      // ห้ามเอาสกิลฮีลไปคลิกใส่มอนสเตอร์
-      if (pendingAction.kind instanceof HealSkill) {
-        battle.addLog("❌ สกิลฟื้นฟูไม่สามารถใช้ใส่ศัตรูได้!");
-        renderBattleScreen();
-        return;
-      }
+      if (!battle || battle.phase !== "battle" || !pendingAction) return;
+      if (pendingAction.kind instanceof HealSkill) return;
 
       const enemyName = card.dataset.enemyName;
       const targetEnemy = battle.enemies.find((m) => m.name === enemyName);
@@ -461,6 +421,14 @@ function wireBattleEvents(): void {
   });
 
   app.querySelector<HTMLButtonElement>("#restart-btn")?.addEventListener("click", () => {
+    transitionTo(() => {
+      battle = new Battle(buildTeam());
+      startTimer();
+      renderBattleScreen();
+    });
+  });
+
+  app.querySelector<HTMLButtonElement>("#home-btn")?.addEventListener("click", () => {
     transitionTo(renderStartScreen);
   });
 
@@ -488,12 +456,16 @@ function renderBattleScreen(): void {
       <div class="battle-header">
         <button id="back-btn" class="back-btn" title="ออกไปหน้าแรก">↩</button>
         <div class="wave-label">Wave ${battle.waveNumber} / ${battle.totalWaves}</div>
-        <div id="wave-timer" class="wave-timer">⏱️ ${timeRemaining}s</div>
+        <div class="header-right-actions">
+          <button id="toggle-log-btn" class="log-toggle-btn">📜 ประวัติการต่อสู้</button>
+          <div id="wave-timer" class="wave-timer">⏱️ ${timeRemaining}s</div>
+        </div>
       </div>
 
-      <!-- ย้ายกล่อง Log มาไว้ตรงกลางระหว่างแผงควบคุมเพื่อให้สังเกตง่ายขึ้น -->
-      <div class="log-box" id="log-box">
-        ${battle.log.map((line) => `<p>${line}</p>`).join("")}
+      <!-- ล็อกบ็อกซ์เปลี่ยนเป็นแบบ Dropdown / โผล่มาเมื่อกดปุ่ม -->
+      <div class="log-box-floating" id="log-box">
+        <h4>บันทึกการต่อสู้</h4>
+        ${battle.log.length > 0 ? battle.log.map((line) => `<p>${line}</p>`).join("") : "<p>ยังไม่มีการโจมตี...</p>"}
       </div>
 
       <div class="battlefield">
@@ -502,14 +474,12 @@ function renderBattleScreen(): void {
       </div>
 
       ${battle.phase === "victory" ? renderEndOverlay("victory") : ""}
-      ${battle.phase === "defeat" ? renderEndOverlay("defeat") : ""}
+      ${battle.phase === "defeat" && !isTimeOut ? renderEndOverlay("defeat") : ""}
+      ${isTimeOut ? renderEndOverlay("timeout") : ""}
     </div>
   `;
 
   wireBattleEvents();
-
-  const logBox = app.querySelector<HTMLDivElement>("#log-box");
-  if (logBox) logBox.scrollTop = logBox.scrollHeight;
 }
 
 renderStartScreen();

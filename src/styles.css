@@ -54,25 +54,83 @@ h1, h2, h3, h4 {
 
 .team-preview {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1.1rem;
-  margin: 2rem 0;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.4rem;
+  margin: 2.2rem 0;
 }
 
+/* ---- Tooltip Preview on Hover ---- */
 .preview-card {
+  position: relative;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 1.3rem 1rem;
   backdrop-filter: blur(10px);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 
 .preview-card:hover { transform: translateY(-6px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); }
 .preview-card h3 { margin: 0.4rem 0 0.2rem; font-size: 1.1rem; }
 .preview-card p { color: var(--muted); font-size: 0.8rem; margin: 0; }
 
-#start-btn, .result-overlay button {
+.preview-card .char-icon { font-size: 2.4rem; }
+.preview-card .char-portrait {
+  width: 96px;
+  height: 96px;
+  border-radius: 14px;
+  object-fit: cover;
+  margin-bottom: 0.3rem;
+}
+
+.char-tooltip {
+  position: absolute;
+  bottom: 105%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(18, 14, 28, 0.96);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 0.9rem;
+  width: 220px;
+  color: var(--text);
+  font-size: 0.8rem;
+  text-align: left;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 20;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.char-tooltip h4 {
+  margin: 0 0 0.4rem;
+  color: var(--gold);
+  font-size: 0.95rem;
+}
+
+.char-tooltip p {
+  margin: 0.2rem 0;
+  color: #ddd;
+}
+
+.char-tooltip .tooltip-skills {
+  margin-top: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--border);
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.preview-card:hover .char-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+#start-btn {
   background: linear-gradient(135deg, var(--gold), #ffb84d);
   color: #2b1d0a;
   border: none;
@@ -85,7 +143,7 @@ h1, h2, h3, h4 {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-#start-btn:hover, .result-overlay button:hover {
+#start-btn:hover {
   transform: translateY(-2px) scale(1.03);
   box-shadow: 0 12px 32px var(--gold-glow);
 }
@@ -101,23 +159,48 @@ h1, h2, h3, h4 {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
 }
 
-.wave-label {
+/* ---- Battle header + timer ---- */
+.battle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.battle-header .wave-label {
+  margin-bottom: 0;
+  flex: 1;
   text-align: center;
   color: var(--gold);
   font-weight: 700;
   font-size: 1.2rem;
-  margin-bottom: 1rem;
   text-shadow: 0 0 12px var(--gold-glow);
 }
 
-.battlefield { display: flex; gap: 1.5rem; margin-bottom: 1.1rem; }
+.wave-timer {
+  font-family: monospace;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #facc15;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.8rem;
+  border-radius: 10px;
+}
+
+.battlefield { display: flex; gap: 1.5rem; margin-top: 1rem; margin-bottom: 1.1rem; }
 .party-row, .enemy-row { flex: 1; display: flex; flex-direction: column; gap: 0.7rem; }
 
+/* ---- Combat Cards ---- */
 .combat-card {
+  position: relative;
+  padding-top: 3rem;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 0.9rem;
+  padding-bottom: 0.9rem;
+  padding-left: 0.9rem;
+  padding-right: 0.9rem;
   text-align: center;
   transition: border-color 0.2s ease, opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -132,7 +215,40 @@ h1, h2, h3, h4 {
   transform: translateY(-3px);
 }
 
-.combat-card.dead { opacity: 0.32; filter: grayscale(0.6); }
+/* ---- Targeting States (โจมตี / ฮีล) ---- */
+.targetable-enemy {
+  cursor: crosshair !important;
+  border-color: #ff4d4d !important;
+  box-shadow: 0 0 18px rgba(255, 77, 77, 0.6) !important;
+  animation: targetPulse 1.2s infinite alternate;
+}
+
+.targetable-ally {
+  cursor: cell !important;
+  border-color: #4ade80 !important;
+  box-shadow: 0 0 18px rgba(74, 222, 128, 0.6) !important;
+  animation: healPulse 1.2s infinite alternate;
+}
+
+@keyframes targetPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.02); }
+}
+
+@keyframes healPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.02); }
+}
+
+.target-indicator {
+  font-size: 0.75rem;
+  color: #ff6b6b;
+  font-weight: 700;
+  margin-top: 0.4rem;
+}
+.target-indicator.heal { color: #4ade80; }
+
+.combat-card.dead { opacity: 0.32; filter: grayscale(0.6); pointer-events: none; }
 .char-icon { font-size: 2rem; display: block; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5)); }
 .combat-card h4 { margin: 0.3rem 0; font-size: 0.95rem; }
 .element-tag { color: var(--muted); font-size: 0.75rem; margin: 0 0 0.5rem; }
@@ -165,6 +281,11 @@ h1, h2, h3, h4 {
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
+.action-btn.active-action {
+  border: 1px solid #fff;
+  box-shadow: 0 0 10px #fff;
+}
+
 .action-btn:disabled { background: #4a3f5e; cursor: not-allowed; opacity: 0.55; }
 .action-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 14px var(--accent-glow); }
 
@@ -176,17 +297,28 @@ h1, h2, h3, h4 {
   50% { box-shadow: 0 0 16px 4px rgba(255,209,102,0.55); }
 }
 
+/* ---- Centered Compact Log Box ---- */
 .log-box {
-  background: rgba(6, 4, 12, 0.7);
+  background: rgba(6, 4, 12, 0.85);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 0.9rem 1.1rem;
-  height: 140px;
+  padding: 0.75rem 1.1rem;
+  height: 120px;
   overflow-y: auto;
   font-size: 0.82rem;
+  margin-bottom: 0.5rem;
 }
 
 .log-box p { margin: 0.25rem 0; color: var(--muted); }
+
+.log-box p:last-child {
+  color: var(--text);
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  border-left: 3px solid var(--gold);
+}
 
 /* ---- Reward screen ---- */
 .reward-screen { text-align: center; }
@@ -210,7 +342,7 @@ h1, h2, h3, h4 {
 .reward-card h3 { margin: 0 0 0.5rem; color: var(--gold); font-size: 1rem; }
 .reward-card p { margin: 0; color: var(--muted); font-size: 0.82rem; }
 
-/* ---- Result overlay ---- */
+/* ---- Result overlay / Victory & Defeat Modal ---- */
 .result-overlay {
   position: absolute;
   inset: 0;
@@ -220,16 +352,70 @@ h1, h2, h3, h4 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.2rem;
+  padding: 2rem;
   z-index: 10;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
 }
 
-.result-overlay h2 { color: var(--gold); font-size: 1.8rem; text-shadow: 0 0 20px var(--gold-glow); }
+.result-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2rem;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+}
 
-/* ---- Character portraits (image or emoji, same slot) ---- */
-.combat-card { position: relative; padding-top: 3rem; overflow: visible; }
+.trophy-icon { font-size: 3rem; margin-bottom: 0.5rem; }
 
+.result-overlay h2 {
+  color: var(--gold);
+  font-size: 1.6rem;
+  margin: 0.4rem 0;
+  text-shadow: 0 0 20px var(--gold-glow);
+}
+
+.victory-desc { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.2rem; }
+
+.battle-stats {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.4rem;
+  text-align: left;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  margin: 0.35rem 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.stat-item strong { color: var(--text); }
+
+.restart-btn-special {
+  background: linear-gradient(135deg, var(--gold), #ffb84d);
+  color: #2b1d0a;
+  border: none;
+  padding: 0.85rem 2rem;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 1.05rem;
+  box-shadow: 0 8px 24px var(--gold-glow);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.restart-btn-special:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 12px 32px var(--gold-glow);
+}
+
+/* ---- Character portraits ---- */
 .portrait-wrap {
   position: absolute;
   top: -1.8rem;
@@ -255,17 +441,6 @@ h1, h2, h3, h4 {
   object-position: top center;
   border-radius: 14px;
   filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.55));
-}
-
-/* Bigger portraits for the start-screen preview cards (no overlap there) */
-.preview-card { position: relative; padding-top: 0.5rem; }
-.preview-card .char-icon { font-size: 2.4rem; }
-.preview-card .char-portrait {
-  width: 96px;
-  height: 96px;
-  border-radius: 14px;
-  object-fit: cover;
-  margin-bottom: 0.3rem;
 }
 
 /* ---- Start screen: story button + panel ---- */
@@ -333,17 +508,6 @@ h1, h2, h3, h4 {
 
 .story-close:hover { color: var(--text); }
 
-/* ---- Battle header + back button ---- */
-.battle-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.battle-header .wave-label { margin-bottom: 0; flex: 1; }
-.battle-header-spacer { width: 2.4rem; }
-
 .back-btn {
   width: 2.4rem;
   height: 2.4rem;
@@ -358,17 +522,7 @@ h1, h2, h3, h4 {
 
 .back-btn:hover { border-color: var(--gold); transform: translateY(-1px) rotate(-8deg); }
 
-/* ---- Log box: newest line reads like a dialogue box ---- */
-.log-box p:last-child {
-  color: var(--text);
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.06);
-  padding: 0.45rem 0.65rem;
-  border-radius: 8px;
-  border-left: 3px solid var(--gold);
-}
-
-/* ---- Screen transition (start <-> battle) ---- */
+/* ---- Screen transitions ---- */
 .screen-fade-out { animation: screenFadeOut 0.2s ease forwards; }
 .screen-fade-in { animation: screenFadeIn 0.28s ease; }
 
@@ -379,4 +533,98 @@ h1, h2, h3, h4 {
 @keyframes screenFadeIn {
   from { opacity: 0; transform: translateY(10px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---- Header Right Actions ---- */
+.header-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.log-toggle-btn {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.log-toggle-btn:hover {
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+
+/* ---- Floating Log Box ---- */
+.log-box-floating {
+  position: absolute;
+  top: 70px;
+  right: 1.5rem;
+  width: 320px;
+  height: 250px;
+  background: rgba(15, 10, 25, 0.95);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+  overflow-y: auto;
+  z-index: 100;
+  display: none; /* ซ่อนไว้เป็นค่าเริ่มต้น */
+  backdrop-filter: blur(8px);
+}
+
+.log-box-floating.show {
+  display: block;
+  animation: slideDown 0.2s ease-out forwards;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.log-box-floating h4 {
+  margin-top: 0;
+  margin-bottom: 0.8rem;
+  color: var(--gold);
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 0.4rem;
+}
+
+.log-box-floating p { margin: 0.4rem 0; color: var(--muted); font-size: 0.8rem; }
+.log-box-floating p:last-child {
+  color: var(--text);
+  font-weight: 600;
+  border-left: 2px solid var(--gold);
+  padding-left: 0.5rem;
+}
+
+/* ---- Modal Actions (ปุ่มกลับหน้าแรก/เริ่มใหม่) ---- */
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.home-btn-special {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--muted);
+  padding: 0.85rem 1.5rem;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 1.05rem;
+  transition: all 0.2s ease;
+}
+
+.home-btn-special:hover {
+  color: var(--text);
+  border-color: var(--text);
+  background: rgba(255, 255, 255, 0.1);
 }
